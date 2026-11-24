@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SURCOS STREAMING — Administrar buzones</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;padding:20px;color:#222}#loginBox,#panel{max-width:800px;margin:0 auto;background:white;padding:22px;border-radius:10px}.hidden{display:none}.form-row{margin:12px 0}label{display:block;font-size:14px;margin-bottom:5px}input[type=text],input[type=password]{width:100%;padding:10px;box-sizing:border-box;border:1px solid #bbb;border-radius:4px}.btn{padding:9px 12px;border:none;border-radius:4px;cursor:pointer;margin:2px}.btn-blue{background:#1f6fb8;color:white}.btn-green{background:#2f8f2f;color:white}.btn-red{background:#c83b3b;color:white}table{border-collapse:collapse;width:100%;margin-top:12px}td,th{border:1px solid #ddd;padding:8px;text-align:left}button:disabled{opacity:.5;cursor:wait}#loginMsg,#mailboxMsg{overflow-wrap:anywhere}
+</style></head><body>
+<div id="loginBox"><h1>Administrar buzones</h1><p>SURCOS STREAMING</p>
+<div class="form-row"><label for="loginUser">Usuario</label><input id="loginUser" type="text" autocomplete="username"></div>
+<div class="form-row"><label for="loginPass">Contraseña</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+<button id="btnLogin" class="btn btn-blue">Entrar</button><p id="loginMsg" role="status"></p><a href="/">Volver a la consulta</a></div>
+<div id="panel" class="hidden"><button id="btnLogout" class="btn">Cerrar sesión</button><a href="/">Volver a la consulta</a>
+  <section id="mailboxesSection" style="margin-top:28px;border-top:2px solid #ddd;padding-top:12px">
+    <h2>Buzones por IMAP — varios proveedores</h2>
+    <p>Conexión cifrada SSL/TLS. Contraseñas y autorizaciones se guardan cifradas en GitHub.</p>
+    <div class="form-row"><label for="mailboxProvider">Proveedor</label><select id="mailboxProvider" style="width:100%;padding:8px"><option value="auto">Detectar por el correo</option></select></div>
+    <p id="mailboxProviderHelp"></p>
+    <input id="mailboxId" type="hidden">
+    <div class="form-row"><label>Nombre del buzón</label><input id="mailboxName" type="text" maxlength="100" placeholder="Principal, respaldo..."></div>
+    <div class="form-row"><label>Correo del buzón</label><input id="mailboxEmail" type="text" autocomplete="off" placeholder="cuenta@gmail.com"></div>
+    <div class="form-row"><label for="mailboxHost">Servidor IMAP (sin https://)</label><input id="mailboxHost" type="text" autocomplete="off" placeholder="imap.tu-proveedor.com"></div>
+    <div class="form-row"><label for="mailboxSecurity">Cifrado</label><select id="mailboxSecurity" style="width:100%;padding:8px"><option value="tls">SSL/TLS directo (habitualmente 993)</option><option value="starttls">STARTTLS obligatorio (habitualmente 143)</option></select></div>
+    <div class="form-row"><label for="mailboxPort">Puerto IMAP</label><input id="mailboxPort" type="number" min="1" max="65535" value="993" style="width:100%;padding:8px;box-sizing:border-box"></div>
+    <div class="form-row"><label for="mailboxUsername">Usuario de conexión (vacío = correo completo)</label><input id="mailboxUsername" type="text" autocomplete="off"></div>
+    <div id="mailboxPasswordRow" class="form-row"><label id="mailboxPasswordLabel" for="mailboxPassword">Clave de aplicación / contraseña IMAP</label><input id="mailboxPassword" type="password" autocomplete="new-password" placeholder="Al editar, vacío conserva la clave actual"></div>
+    <div class="form-row"><label>Carpeta (vacío = Todos los correos en Gmail; All/INBOX en otros)</label><input id="mailboxFolder" type="text" placeholder="Automática; INBOX para solo recibidos"></div>
+    <div class="form-row"><label><input id="mailboxActive" type="checkbox" checked> Buzón activo</label></div>
+    <button id="saveMailbox" class="btn btn-green">Guardar buzón</button>
+    <div id="microsoftAuthOptions" hidden>
+      <label for="microsoftAuthMode">Método de conexión Microsoft</label>
+      <select id="microsoftAuthMode" style="width:100%;padding:8px">
+        <option value="device">Prueba sin secreto — cliente público Thunderbird</option>
+        <option value="web">Aplicación propia — ID, secreto y redirección</option>
+      </select>
+      <p>El modo de prueba usa un identificador público de Mozilla Thunderbird. La autorización puede mostrar ese nombre; esta página no es Thunderbird ni está afiliada a Mozilla. Microsoft puede rechazar o limitar esta modalidad.</p>
+      <label><input id="acceptPublicMicrosoft" type="checkbox"> Entiendo que usaré un cliente público externo para probar mi propio buzón.</label>
+    </div>
+    <div id="microsoftDevicePanel" hidden style="border:1px solid #bbb;padding:12px;margin:12px 0">
+      <p id="microsoftDeviceClient"></p>
+      <p>Abre Microsoft y escribe este código: <strong id="microsoftDeviceCode"></strong></p>
+      <p><a id="microsoftDeviceLink" target="_blank" rel="noopener noreferrer">Abrir Microsoft para autorizar</a></p>
+      <p>Autoriza el mismo correo que indicaste arriba. Mantén abierto este panel; comprobará el acceso automáticamente.</p>
+      <p id="microsoftDeviceStatus" role="status"></p>
+      <button id="cancelMicrosoftDevice" type="button" class="btn">Cancelar prueba</button>
+    </div>
+    <button id="connectMicrosoft" class="btn btn-blue" type="button" hidden>Conectar con Microsoft</button>
+    <button id="cancelMailboxEdit" class="btn">Cancelar edición</button>
+    <button id="refreshMailboxes" class="btn btn-blue">Actualizar lista</button>
+    <p id="mailboxMsg" role="status"></p>
+    <div style="overflow-x:auto"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="mailboxRows"></tbody></table></div>
+  </section>
+
+  <section id="subjectsSection" style="margin-top:28px;border-top:2px solid #ddd;padding-top:12px">
+    <h2>Asuntos de códigos</h2>
+    <p>Agrega uno por línea o sepáralos con coma o punto y coma. Se guardarán en GitHub como asuntos que muestran el cuerpo del mensaje.</p>
+    <label for="subjectsInput">Nuevos asuntos</label>
+    <textarea id="subjectsInput" rows="5" style="width:100%;box-sizing:border-box;padding:10px" placeholder="Primer asunto&#10;Segundo asunto&#10;Tercer asunto"></textarea>
+    <p style="font-size:13px">Si un asunto contiene una coma o punto y coma, escríbelo entre comillas dobles. Los duplicados se omiten.</p>
+    <button id="addSubjects" class="btn btn-green">Agregar asuntos</button>
+    <button id="refreshSubjects" class="btn btn-blue">Actualizar lista</button>
+    <p id="subjectsMsg" role="status"></p>
+    <p id="subjectsPublishState"></p>
+    <div style="overflow-x:auto"><table><thead><tr><th>Asunto configurado</th><th>Publicación</th><th>Acciones</th></tr></thead><tbody id="subjectsRows"></tbody></table></div>
+  </section>
+</div>
+<script src="admin-login.js"></script><script src="mailbox-admin.js"></script>
+<script src="microsoft-device-admin.js"></script>
+<script src="subjects-admin.js"></script>
+</body></html>
